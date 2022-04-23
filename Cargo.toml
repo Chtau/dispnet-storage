@@ -1,0 +1,21 @@
+[package]
+name = "dispnet-storage"
+version = "0.1.0"
+description = "Hash Library used for Dispnet"
+homepage = "https://github.com/Chtau/dispnet-storage"
+repository = "https://github.com/Chtau/dispnet-storage"
+edition = "2021"
+license = "MIT"
+authors = ["Christoph Taucher <taucher.ch@gmail.com>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "dispnet_storage_benchmark"
+harness = false
