@@ -127,8 +127,8 @@ mod tests {
 
     #[test]
     fn instance() {
-        let f_path = format!("{}/{}", FILE_STORAGE, "instance");
-        let d_path = format!("{}/{}", DELETE_STORAGE, "instance");
+        let f_path = format!("{}_{}", FILE_STORAGE, "instance");
+        let d_path = format!("{}_{}", DELETE_STORAGE, "instance");
 
         let _file_storage = DispnetFileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
         let attr = std::fs::metadata(f_path.to_owned()).unwrap();
@@ -140,8 +140,8 @@ mod tests {
 
     #[test]
     fn save() {
-        let f_path = format!("{}/{}", FILE_STORAGE, "save");
-        let d_path = format!("{}/{}", DELETE_STORAGE, "save");
+        let f_path = format!("{}_{}", FILE_STORAGE, "save");
+        let d_path = format!("{}_{}", DELETE_STORAGE, "save");
 
         let file_storage = DispnetFileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
         let result = file_storage.save(FILE_KEY, "test".to_owned().into_bytes()).unwrap();
@@ -151,8 +151,8 @@ mod tests {
 
     #[test]
     fn get() {
-        let f_path = format!("{}/{}", FILE_STORAGE, "get");
-        let d_path = format!("{}/{}", DELETE_STORAGE, "get");
+        let f_path = format!("{}_{}", FILE_STORAGE, "get");
+        let d_path = format!("{}_{}", DELETE_STORAGE, "get");
 
         let file_storage = DispnetFileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
         file_storage.save(FILE_KEY, "test".to_owned().into_bytes()).unwrap();
@@ -164,8 +164,8 @@ mod tests {
 
     #[test]
     fn delete() {
-        let f_path = format!("{}/{}", FILE_STORAGE, "delete");
-        let d_path = format!("{}/{}", DELETE_STORAGE, "delete");
+        let f_path = format!("{}_{}", FILE_STORAGE, "delete");
+        let d_path = format!("{}_{}", DELETE_STORAGE, "delete");
 
         let file_storage = DispnetFileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
         file_storage.save(FILE_KEY, "test".to_owned().into_bytes()).unwrap();
@@ -178,8 +178,8 @@ mod tests {
     
     #[test]
     fn force_free() {
-        let f_path = format!("{}/{}", FILE_STORAGE, "force_free");
-        let d_path = format!("{}/{}", DELETE_STORAGE, "force_free");
+        let f_path = format!("{}_{}", FILE_STORAGE, "force_free");
+        let d_path = format!("{}_{}", DELETE_STORAGE, "force_free");
 
         let file_storage = DispnetFileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
         file_storage.save(FILE_KEY, "test".to_owned().into_bytes()).unwrap();
