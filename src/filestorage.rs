@@ -175,6 +175,21 @@ mod tests {
         clean_up(&f_path, &d_path);
     }
 
+
+    #[test]
+    fn free() {
+        let f_path = format!("{}_{}", FILE_STORAGE, "free");
+        let d_path = format!("{}_{}", DELETE_STORAGE, "free");
+
+        let file_storage = DispnetFileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
+        file_storage.save(FILE_KEY, "test".to_owned().into_bytes()).unwrap();
+        file_storage.delete(FILE_KEY);
+        file_storage.free();
+        let exists = std::path::Path::new(&format!("{}/{}", d_path, FILE_KEY)).exists();
+        assert!(exists);
+        clean_up(&f_path, &d_path);
+    }
+
     
     #[test]
     fn force_free() {
