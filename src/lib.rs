@@ -1,3 +1,5 @@
+use dispnet_shared::Package;
+
 pub mod filestorage;
 
 pub struct GetData {
@@ -23,10 +25,10 @@ pub enum PolicyTrigger {
 
 pub trait Policy {
     fn get_validation_conditions() -> Vec<PolicyTrigger>;
-    fn validate() -> bool;
+    fn validate(package: Package, client: String) -> bool;
 }
 
-pub trait DispnetStorageProvider {
+pub trait StorageProvider {
     fn get(self: &Self, key: &str) -> Result<GetData, String>;
     fn save(self: &Self, key: &str, raw: Vec<u8>) -> Result<SaveData, String>;
     fn delete(self: &Self, key: &str);

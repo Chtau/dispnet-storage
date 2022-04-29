@@ -1,15 +1,15 @@
 use std::{fs::{File, self}, io::{Read, Write}, time::SystemTime};
 
-use crate::{DispnetStorageProvider, GetData, SaveData};
+use crate::{StorageProvider, GetData, SaveData};
 
 const DAY_IN_SECONDS: u64 = 86_400;
 
-pub struct DispnetFileStorageProvider {
+pub struct FileStorageProvider {
     folder: String,
     delete: String,
 }
 
-impl DispnetFileStorageProvider {
+impl FileStorageProvider {
     pub fn new(storage_folder: String, delete_folder: String) -> Self {
         let _result = std::fs::create_dir_all(&storage_folder);
         let _result = std::fs::create_dir_all(&delete_folder);
@@ -19,15 +19,15 @@ impl DispnetFileStorageProvider {
         }
     }
 
-    fn internal_file_path(self: &DispnetFileStorageProvider, key: &str) -> String {
+    fn internal_file_path(self: &FileStorageProvider, key: &str) -> String {
         return format!("{}/{}", self.folder, key.to_owned());
     }
 
-    fn internal_file_delete_path(self: &DispnetFileStorageProvider, key: &str) -> String {
+    fn internal_file_delete_path(self: &FileStorageProvider, key: &str) -> String {
         return format!("{}/{}", self.delete, key.to_owned());
     }
 
-    fn delete_files_older_then(self: &DispnetFileStorageProvider, seconds: u64) {
+    fn delete_files_older_then(self: &FileStorageProvider, seconds: u64) {
         for entry in fs::read_dir(self.delete.to_owned()).unwrap() {
             if let Ok(entry_result) = entry {
                 let entry_path = entry_result.path();
@@ -50,8 +50,8 @@ impl DispnetFileStorageProvider {
     }
 }
 
-impl DispnetStorageProvider for DispnetFileStorageProvider {
-    fn get(self: &DispnetFileStorageProvider, key: &str) -> Result<GetData, String> {
+impl StorageProvider for FileStorageProvider {
+    fn get(self: &FileStorageProvider, key: &str) -> Result<GetData, String> {
         let file_result = File::open(self.internal_file_path(key));
         if let Ok(mut file) = file_result {
             let mut buffer = Vec::new();
@@ -72,7 +72,7 @@ impl DispnetStorageProvider for DispnetFileStorageProvider {
         Err("Not found".to_owned())
     }
 
-    fn save(self: &DispnetFileStorageProvider, key: &str, raw: Vec<u8>) -> Result<SaveData, String> {
+    fn save(self: &FileStorageProvider, key: &str, raw: Vec<u8>) -> Result<SaveData, String> {
         let buffer_result = File::create(self.internal_file_path(key));
         if let Ok(mut buffer) = buffer_result {
             if buffer.write_all(&raw).is_ok() {
@@ -85,17 +85,17 @@ impl DispnetStorageProvider for DispnetFileStorageProvider {
         Err("Could not save".to_owned())
     }
 
-    fn delete(self: &DispnetFileStorageProvider, key: &str) {
+    fn delete(self: &FileStorageProvider, key: &str) {
         let from = self.internal_file_path(key).to_owned();
         let to = self.internal_file_delete_path(key).to_owned();
         let _result = fs::rename(from, to);
     }
 
-    fn free(self: &DispnetFileStorageProvider) {
+    fn free(self: &FileStorageProvider) {
         self.delete_files_older_then(DAY_IN_SECONDS * 15);
     }
 
-    fn force_free(self: &DispnetFileStorageProvider, all: bool) {
+    fn force_free(self: &FileStorageProvider, all: bool) {
         if all {
             self.delete_files_older_then(0);
         } else {
@@ -106,9 +106,9 @@ impl DispnetStorageProvider for DispnetFileStorageProvider {
 
 #[cfg(test)]
 mod tests {
-    use crate::DispnetStorageProvider;
+    use crate::StorageProvider;
 
-    use super::DispnetFileStorageProvider;
+    use super::FileStorageProvider;
 
     const FILE_STORAGE: &str = "test_fstore";
     const DELETE_STORAGE: &str = "test_fdelete";
@@ -130,7 +130,7 @@ mod tests {
         let f_path = format!("{}_{}", FILE_STORAGE, "instance");
         let d_path = format!("{}_{}", DELETE_STORAGE, "instance");
 
-        let _file_storage = DispnetFileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
+        let _file_storage = FileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
         let attr = std::fs::metadata(f_path.to_owned()).unwrap();
         assert!(attr.is_dir());
         let attr = std::fs::metadata(d_path.to_owned()).unwrap();
@@ -143,7 +143,7 @@ mod tests {
         let f_path = format!("{}_{}", FILE_STORAGE, "save");
         let d_path = format!("{}_{}", DELETE_STORAGE, "save");
 
-        let file_storage = DispnetFileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
+        let file_storage = FileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
         let result = file_storage.save(FILE_KEY, "test".to_owned().into_bytes()).unwrap();
         assert_eq!(result.key, FILE_KEY);
         clean_up(&f_path, &d_path);
@@ -154,7 +154,7 @@ mod tests {
         let f_path = format!("{}_{}", FILE_STORAGE, "get");
         let d_path = format!("{}_{}", DELETE_STORAGE, "get");
 
-        let file_storage = DispnetFileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
+        let file_storage = FileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
         file_storage.save(FILE_KEY, "test".to_owned().into_bytes()).unwrap();
         let result = file_storage.get(FILE_KEY).unwrap();
         assert_eq!(result.size, 4);
@@ -167,7 +167,7 @@ mod tests {
         let f_path = format!("{}_{}", FILE_STORAGE, "delete");
         let d_path = format!("{}_{}", DELETE_STORAGE, "delete");
 
-        let file_storage = DispnetFileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
+        let file_storage = FileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
         file_storage.save(FILE_KEY, "test".to_owned().into_bytes()).unwrap();
         file_storage.delete(FILE_KEY);
         let attr = std::fs::metadata(format!("{}/{}", d_path, FILE_KEY)).unwrap();
@@ -181,7 +181,7 @@ mod tests {
         let f_path = format!("{}_{}", FILE_STORAGE, "free");
         let d_path = format!("{}_{}", DELETE_STORAGE, "free");
 
-        let file_storage = DispnetFileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
+        let file_storage = FileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
         file_storage.save(FILE_KEY, "test".to_owned().into_bytes()).unwrap();
         file_storage.delete(FILE_KEY);
         file_storage.free();
@@ -196,7 +196,7 @@ mod tests {
         let f_path = format!("{}_{}", FILE_STORAGE, "force_free");
         let d_path = format!("{}_{}", DELETE_STORAGE, "force_free");
 
-        let file_storage = DispnetFileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
+        let file_storage = FileStorageProvider::new(f_path.to_owned(), d_path.to_owned());
         file_storage.save(FILE_KEY, "test".to_owned().into_bytes()).unwrap();
         file_storage.delete(FILE_KEY);
         file_storage.force_free(true);
