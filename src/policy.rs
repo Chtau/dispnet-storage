@@ -1,5 +1,6 @@
 use dispnet_shared::Package;
 
+/// Trigger events for policies.
 #[derive(Debug, PartialEq)]
 pub enum PolicyTrigger {
     BeforeGet = 0,
@@ -11,15 +12,21 @@ pub enum PolicyTrigger {
     BeforeFree = 6,
 }
 
+/// Used for triggered policies.
 pub struct TriggerPolicy {
-    layer: String,
-    get_validation_conditions: Vec<PolicyTrigger>,
+    /// Named layer on which the trigger is listening.
+    pub layer: String,
+    /// Events which should trigger the policy.
+    pub get_validation_conditions: Vec<PolicyTrigger>,
 }
 
+/// Used for layer selection policies.
 pub struct LayerPolicy {
-    success_layer_key: String,
+    /// Named layer result after successful resolving the policy.
+    pub success_layer_key: String,
 }
 
+/// Used for incoming packages.
 pub struct IncomingPolicy {}
 
 pub enum PolicyType {
@@ -33,10 +40,43 @@ pub trait Policy {
     fn validate(self: &Self, package: &Package, client: &str) -> bool;
 }
 
+/// Defines a policy role.
+/// 
+/// # Examples rule incoming package
+/// ```
+/// PolicyRule {
+///     name: "1".to_owned(),
+///     policy_type: PolicyType::Incoming(IncomingPolicy {}),
+///     validation_callback: |_x, _y| true,
+/// }
+/// ```
+/// 
+/// # Examples rule layer selection
+/// ```
+/// PolicyRule {
+///     name: "2".to_owned(),
+///     policy_type: PolicyType::Layer(LayerPolicy {
+///         success_layer_key: "".to_owned(),
+///     }),
+///     validation_callback: |_x, _y| true,
+/// }
+/// ```
+/// 
+/// # Examples rule triggered
+/// ```
+/// PolicyRule {
+///     name: "3".to_owned(),
+///     policy_type: PolicyType::Trigger(TriggerPolicy {
+///         layer: "l1".to_owned(),
+///         get_validation_conditions: vec![PolicyTrigger::BeforeSave],
+///     }),
+///     validation_callback: |_x, _y| true,
+/// }
+/// ```
 pub struct PolicyRule {
-    name: String,
-    policy_type: PolicyType,
-    validation_callback: fn(package: &Package, client: &str) -> bool,
+    pub name: String,
+    pub policy_type: PolicyType,
+    pub validation_callback: fn(package: &Package, client: &str) -> bool,
 }
 
 impl Policy for PolicyRule {
