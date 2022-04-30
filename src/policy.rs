@@ -49,6 +49,7 @@ impl Policy for PolicyRule {
     }
 }
 
+/// Policy manager for package validation and layer selection.
 pub struct PolicyManager {
     incoming_policies: Vec<PolicyRule>,
     layer_policies: Vec<PolicyRule>,
@@ -64,22 +65,27 @@ impl PolicyManager {
         }
     }
 
+    /// Active policies count for incoming package validation.
     pub fn incoming_policies_count(self: &Self) -> usize {
         self.incoming_policies.len()
     }
 
+    /// Active policies count for layer resolving.
     pub fn layer_policies_count(self: &Self) -> usize {
         self.layer_policies.len()
     }
 
+    /// Active policies count for package triggers.
     pub fn trigger_policies_count(self: &Self) -> usize {
         self.trigger_policies.len()
     }
 
+    /// Total active policies count.
     pub fn policies_count(self: &Self) -> usize {
         self.incoming_policies_count() + self.layer_policies_count() + self.trigger_policies_count()
     }
 
+    /// Register a policy, to update a policy call the `remove` function first.
     pub fn add(self: &mut Self, policy: PolicyRule) {
         match &policy.policy_type {
             PolicyType::Incoming(_incoming) => {
@@ -94,6 +100,7 @@ impl PolicyManager {
         }
     }
 
+    /// Remove a registered policy.
     pub fn remove(self: &mut Self, name: &str) -> bool {
         if self.incoming_policies.iter().any(|f| f.name == name) {
             let index = self
@@ -125,12 +132,14 @@ impl PolicyManager {
         false
     }
 
+    /// Clear all registered policies.
     pub fn clear(self: &mut Self) {
         self.incoming_policies.clear();
         self.layer_policies.clear();
         self.trigger_policies.clear();
     }
 
+    /// Validate incoming packages. Only returns `false` if any policy has failed.
     pub fn validate_incoming(self: &Self, package: &Package, client: &str) -> bool {
         for policy in self.incoming_policies.iter() {
             if !policy.validate(package, client) {
@@ -140,6 +149,7 @@ impl PolicyManager {
         true
     }
 
+    /// Resolve the layer name which should be used for the package. Returns `Err` if no policy matches the conditions for the package.
     pub fn resolve_layer(self: &Self, package: &Package, client: &str) -> Result<String, ()> {
         for policy in self.layer_policies.iter() {
             // on a successful validation we switch to the provided layer
@@ -152,6 +162,7 @@ impl PolicyManager {
         Err(())
     }
 
+    /// Validation based on trigger events. Only returns `false` if any policy has failed.
     pub fn validate_trigger(
         self: &Self,
         source_layer: &str,
