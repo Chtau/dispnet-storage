@@ -113,9 +113,10 @@ impl PolicyManager {
         false
     }
 
-    pub fn clear(self: &mut Self) -> bool {
-
-        false
+    pub fn clear(self: &mut Self) {
+        self.incoming_policies.clear();
+        self.layer_policies.clear();
+        self.trigger_policies.clear();
     }
 
     pub fn validate_incoming(self: &Self, package: &Package, client: &str) -> bool {
