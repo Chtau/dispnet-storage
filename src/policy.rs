@@ -94,19 +94,31 @@ impl PolicyManager {
         }
     }
 
-    pub fn remove(self: &mut Self, name: String) -> bool {
-        if self.incoming_policies.iter().any(|f|f.name == name) {
-            let index = self.incoming_policies.iter().position(|x|x.name == name).unwrap();
+    pub fn remove(self: &mut Self, name: &str) -> bool {
+        if self.incoming_policies.iter().any(|f| f.name == name) {
+            let index = self
+                .incoming_policies
+                .iter()
+                .position(|x| x.name == name)
+                .unwrap();
             self.incoming_policies.remove(index);
             return true;
         }
-        if self.layer_policies.iter().any(|f|f.name == name) {
-            let index = self.layer_policies.iter().position(|x|x.name == name).unwrap();
+        if self.layer_policies.iter().any(|f| f.name == name) {
+            let index = self
+                .layer_policies
+                .iter()
+                .position(|x| x.name == name)
+                .unwrap();
             self.layer_policies.remove(index);
             return true;
         }
-        if self.trigger_policies.iter().any(|f|f.name == name) {
-            let index = self.trigger_policies.iter().position(|x|x.name == name).unwrap();
+        if self.trigger_policies.iter().any(|f| f.name == name) {
+            let index = self
+                .trigger_policies
+                .iter()
+                .position(|x| x.name == name)
+                .unwrap();
             self.trigger_policies.remove(index);
             return true;
         }
@@ -149,7 +161,9 @@ impl PolicyManager {
     ) -> bool {
         for policy in self.trigger_policies.iter().filter(|x| {
             if let PolicyType::Trigger(trigger_policy) = &x.policy_type {
-                if trigger_policy.get_validation_conditions.contains(trigger) && trigger_policy.layer == source_layer {
+                if trigger_policy.get_validation_conditions.contains(trigger)
+                    && trigger_policy.layer == source_layer
+                {
                     return true;
                 }
             }
@@ -166,31 +180,39 @@ impl PolicyManager {
 
 #[cfg(test)]
 mod tests {
-    use super::{PolicyManager, IncomingPolicy, PolicyType, PolicyRule, LayerPolicy, TriggerPolicy, PolicyTrigger};
-
+    use super::{
+        IncomingPolicy, LayerPolicy, PolicyManager, PolicyRule, PolicyTrigger, PolicyType,
+        TriggerPolicy,
+    };
+    use dispnet_shared::Package;
 
     #[test]
     fn add_policies() {
         let mut manager = PolicyManager::new();
         manager.add({
-            PolicyRule { 
+            PolicyRule {
                 name: "1".to_owned(),
-                policy_type: PolicyType::Incoming(IncomingPolicy {}), 
-                validation_callback: |_x, _y|true
-            }
-        });
-        manager.add({
-            PolicyRule { 
-                name: "2".to_owned(),
-                policy_type: PolicyType::Layer(LayerPolicy { success_layer_key: "".to_owned() }), 
-                validation_callback: |_x, _y|true
+                policy_type: PolicyType::Incoming(IncomingPolicy {}),
+                validation_callback: |_x, _y| true,
             }
         });
         manager.add({
             PolicyRule {
-                name: "3".to_owned(), 
-                policy_type: PolicyType::Trigger(TriggerPolicy { layer: "l1".to_owned(), get_validation_conditions: vec![PolicyTrigger::BeforeSave] }),
-                validation_callback: |_x, _y|true
+                name: "2".to_owned(),
+                policy_type: PolicyType::Layer(LayerPolicy {
+                    success_layer_key: "".to_owned(),
+                }),
+                validation_callback: |_x, _y| true,
+            }
+        });
+        manager.add({
+            PolicyRule {
+                name: "3".to_owned(),
+                policy_type: PolicyType::Trigger(TriggerPolicy {
+                    layer: "l1".to_owned(),
+                    get_validation_conditions: vec![PolicyTrigger::BeforeSave],
+                }),
+                validation_callback: |_x, _y| true,
             }
         });
         assert_eq!(manager.policies_count(), 3);
@@ -199,4 +221,155 @@ mod tests {
         assert_eq!(manager.trigger_policies_count(), 1);
     }
 
+    #[test]
+    fn remove_policy() {
+        let mut manager = PolicyManager::new();
+        manager.add({
+            PolicyRule {
+                name: "1".to_owned(),
+                policy_type: PolicyType::Incoming(IncomingPolicy {}),
+                validation_callback: |_x, _y| true,
+            }
+        });
+        manager.add({
+            PolicyRule {
+                name: "2".to_owned(),
+                policy_type: PolicyType::Layer(LayerPolicy {
+                    success_layer_key: "".to_owned(),
+                }),
+                validation_callback: |_x, _y| true,
+            }
+        });
+        manager.add({
+            PolicyRule {
+                name: "3".to_owned(),
+                policy_type: PolicyType::Trigger(TriggerPolicy {
+                    layer: "l1".to_owned(),
+                    get_validation_conditions: vec![PolicyTrigger::BeforeSave],
+                }),
+                validation_callback: |_x, _y| true,
+            }
+        });
+        assert_eq!(manager.policies_count(), 3);
+        manager.remove("1");
+        assert_eq!(manager.policies_count(), 2);
+        assert_eq!(manager.incoming_policies_count(), 0);
+
+        manager.remove("2");
+        assert_eq!(manager.policies_count(), 1);
+        assert_eq!(manager.layer_policies_count(), 0);
+
+        manager.remove("3");
+        assert_eq!(manager.policies_count(), 0);
+        assert_eq!(manager.trigger_policies_count(), 0);
+    }
+
+    #[test]
+    fn clear_policies() {
+        let mut manager = PolicyManager::new();
+        manager.add({
+            PolicyRule {
+                name: "1".to_owned(),
+                policy_type: PolicyType::Incoming(IncomingPolicy {}),
+                validation_callback: |_x, _y| true,
+            }
+        });
+        manager.add({
+            PolicyRule {
+                name: "2".to_owned(),
+                policy_type: PolicyType::Layer(LayerPolicy {
+                    success_layer_key: "".to_owned(),
+                }),
+                validation_callback: |_x, _y| true,
+            }
+        });
+        assert_eq!(manager.policies_count(), 2);
+        manager.clear();
+        assert_eq!(manager.policies_count(), 0);
+    }
+
+    fn get_package() -> Package {
+        Package {
+            index: 0,
+            checksum: "".to_owned(),
+            compression_algorithm: "".to_owned(),
+            normalized_size: 0,
+            package_id: "1".to_owned(),
+            size: 0,
+        }
+    }
+
+    #[test]
+    fn validate_incoming() {
+        let mut manager = PolicyManager::new();
+        manager.add({
+            PolicyRule {
+                name: "1".to_owned(),
+                policy_type: PolicyType::Incoming(IncomingPolicy {}),
+                validation_callback: |_x, _y| true,
+            }
+        });
+        let valid = manager.validate_incoming(
+            &get_package(),
+            "client",
+        );
+        assert!(valid);
+    }
+
+    #[test]
+    fn resolve_layer() {
+        let mut manager = PolicyManager::new();
+        manager.add({
+            PolicyRule {
+                name: "2".to_owned(),
+                policy_type: PolicyType::Layer(LayerPolicy {
+                    success_layer_key: "test1".to_owned(),
+                }),
+                validation_callback: |_x, _y| true,
+            }
+        });
+        let layer = manager.resolve_layer(
+            &get_package(),
+            "client",
+        ).unwrap();
+        assert_eq!(layer, "test1");
+    }
+
+    #[test]
+    fn validate_trigger() {
+        let mut manager = PolicyManager::new();
+        manager.add({
+            PolicyRule {
+                name: "3".to_owned(),
+                policy_type: PolicyType::Trigger(TriggerPolicy {
+                    layer: "l1".to_owned(),
+                    get_validation_conditions: vec![PolicyTrigger::BeforeSave],
+                }),
+                validation_callback: |_x, _y| false,
+            }
+        });
+        let valid = manager.validate_trigger(
+            "l1",
+            &PolicyTrigger::BeforeSave,
+            &get_package(),
+            "client",
+        );
+        assert!(!valid);
+
+        let not_valid_layer = manager.validate_trigger(
+            "l2",
+            &PolicyTrigger::BeforeSave,
+            &get_package(),
+            "client",
+        );
+        assert!(not_valid_layer);
+
+        let not_valid_event = manager.validate_trigger(
+            "l1",
+            &PolicyTrigger::AfterSave,
+            &get_package(),
+            "client",
+        );
+        assert!(not_valid_event);
+    }
 }
