@@ -12,6 +12,7 @@ pub enum PolicyTrigger {
 }
 
 pub struct TriggerPolicy {
+    layer: String,
     get_validation_conditions: Vec<PolicyTrigger>,
 }
 
@@ -33,6 +34,7 @@ pub trait Policy {
 }
 
 pub struct PolicyRule {
+    name: String,
     policy_type: PolicyType,
     validation_callback: fn(package: &Package, client: &str) -> bool,
 }
@@ -54,6 +56,30 @@ pub struct PolicyManager {
 }
 
 impl PolicyManager {
+    pub fn new() -> Self {
+        Self {
+            incoming_policies: vec![],
+            layer_policies: vec![],
+            trigger_policies: vec![],
+        }
+    }
+
+    pub fn incoming_policies_count(self: &Self) -> usize {
+        self.incoming_policies.len()
+    }
+
+    pub fn layer_policies_count(self: &Self) -> usize {
+        self.layer_policies.len()
+    }
+
+    pub fn trigger_policies_count(self: &Self) -> usize {
+        self.trigger_policies.len()
+    }
+
+    pub fn policies_count(self: &Self) -> usize {
+        self.incoming_policies_count() + self.layer_policies_count() + self.trigger_policies_count()
+    }
+
     pub fn add(self: &mut Self, policy: PolicyRule) {
         match &policy.policy_type {
             PolicyType::Incoming(_incoming) => {
@@ -66,6 +92,30 @@ impl PolicyManager {
                 self.trigger_policies.push(policy);
             }
         }
+    }
+
+    pub fn remove(self: &mut Self, name: String) -> bool {
+        if self.incoming_policies.iter().any(|f|f.name == name) {
+            let index = self.incoming_policies.iter().position(|x|x.name == name).unwrap();
+            self.incoming_policies.remove(index);
+            return true;
+        }
+        if self.layer_policies.iter().any(|f|f.name == name) {
+            let index = self.layer_policies.iter().position(|x|x.name == name).unwrap();
+            self.layer_policies.remove(index);
+            return true;
+        }
+        if self.trigger_policies.iter().any(|f|f.name == name) {
+            let index = self.trigger_policies.iter().position(|x|x.name == name).unwrap();
+            self.trigger_policies.remove(index);
+            return true;
+        }
+        false
+    }
+
+    pub fn clear(self: &mut Self) -> bool {
+
+        false
     }
 
     pub fn validate_incoming(self: &Self, package: &Package, client: &str) -> bool {
@@ -91,13 +141,14 @@ impl PolicyManager {
 
     pub fn validate_trigger(
         self: &Self,
+        source_layer: &str,
         trigger: &PolicyTrigger,
         package: &Package,
         client: &str,
     ) -> bool {
         for policy in self.trigger_policies.iter().filter(|x| {
             if let PolicyType::Trigger(trigger_policy) = &x.policy_type {
-                if trigger_policy.get_validation_conditions.contains(trigger) {
+                if trigger_policy.get_validation_conditions.contains(trigger) && trigger_policy.layer == source_layer {
                     return true;
                 }
             }
@@ -110,4 +161,41 @@ impl PolicyManager {
         }
         true
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{PolicyManager, IncomingPolicy, PolicyType, PolicyRule, LayerPolicy, TriggerPolicy, PolicyTrigger};
+
+
+    #[test]
+    fn add_policies() {
+        let mut manager = PolicyManager::new();
+        manager.add({
+            PolicyRule { 
+                name: "1".to_owned(),
+                policy_type: PolicyType::Incoming(IncomingPolicy {}), 
+                validation_callback: |_x, _y|true
+            }
+        });
+        manager.add({
+            PolicyRule { 
+                name: "2".to_owned(),
+                policy_type: PolicyType::Layer(LayerPolicy { success_layer_key: "".to_owned() }), 
+                validation_callback: |_x, _y|true
+            }
+        });
+        manager.add({
+            PolicyRule {
+                name: "3".to_owned(), 
+                policy_type: PolicyType::Trigger(TriggerPolicy { layer: "l1".to_owned(), get_validation_conditions: vec![PolicyTrigger::BeforeSave] }),
+                validation_callback: |_x, _y|true
+            }
+        });
+        assert_eq!(manager.policies_count(), 3);
+        assert_eq!(manager.incoming_policies_count(), 1);
+        assert_eq!(manager.layer_policies_count(), 1);
+        assert_eq!(manager.trigger_policies_count(), 1);
+    }
+
 }
