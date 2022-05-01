@@ -38,6 +38,15 @@ impl StorageManager {
         Err("Storage provider layer not found for `get` action".to_owned())
     }
 
+    pub fn find(self: &Self, key: &str) -> Result<GetData, String> {
+        for layer in self.storage_providers.iter() {
+            if let Ok(result) = layer.1.get(key) {
+                return Ok(result);
+            }
+        }
+        Err(format!("Requested key: `{}` not found in any storage provider.", key))
+    }
+
     pub fn save(self: &Self, layer_key: &str, key: &str, raw: Vec<u8>) -> Result<SaveData, String> {
         if self.storage_providers.contains_key(layer_key) {
             return self.storage_providers.get(layer_key).unwrap().save(key, raw);
@@ -132,6 +141,18 @@ mod tests {
         manager.add_storage_provider("layer1".to_owned(), storage_provider_instance(f_key));
         let _save_result = manager.save("layer1", FILE_KEY, "test".to_owned().into_bytes());
         let result = manager.get("layer1", FILE_KEY).unwrap();
+        assert_eq!(result.size, 4);
+        assert_eq!(result.key, FILE_KEY);
+        clean_up(f_key);
+    }
+
+    #[test]
+    fn find() {
+        let f_key = "find_provider";
+        let mut manager = StorageManager::new();
+        manager.add_storage_provider("layer1".to_owned(), storage_provider_instance(f_key));
+        let _save_result = manager.save("layer1", FILE_KEY, "test".to_owned().into_bytes());
+        let result = manager.find(FILE_KEY).unwrap();
         assert_eq!(result.size, 4);
         assert_eq!(result.key, FILE_KEY);
         clean_up(f_key);
