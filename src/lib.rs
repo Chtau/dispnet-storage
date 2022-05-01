@@ -1,4 +1,4 @@
-use policy::Policy;
+use policy::{Policy, PolicyRule};
 
 pub mod filestorage;
 pub mod policy;
@@ -21,9 +21,4 @@ pub trait StorageProvider {
     fn delete(self: &Self, key: &str);
     fn free(self: &Self);
     fn force_free(self: &Self, all: bool);
-}
-
-pub trait Storage {
-    fn set_storage_layer<T>(self: &Self, layer_key: String, provider: Box<T>) where T: StorageProvider;
-    fn set_policy<T>(self: &Self, policy: Box<T>) where T: Policy;
 }
