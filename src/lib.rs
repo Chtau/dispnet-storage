@@ -1,5 +1,3 @@
-use policy::{Policy, PolicyRule};
-
 pub mod filestorage;
 pub mod policy;
 pub mod storage_manager;
