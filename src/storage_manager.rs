@@ -6,6 +6,8 @@ use crate::{StorageProvider, GetData, SaveData};
 /// 
 /// # Example
 /// ```
+/// use dispnet_storage::storage_manager::StorageManager;
+/// 
 /// let mut manager = StorageManager::new();
 /// ```
 pub struct StorageManager {

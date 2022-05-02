@@ -44,34 +44,40 @@ pub trait Policy {
 /// 
 /// # Examples rule incoming package
 /// ```
-/// PolicyRule {
+/// use dispnet_storage::policy::{PolicyRule, PolicyType, IncomingPolicy};
+/// 
+/// let rule = PolicyRule {
 ///     name: "1".to_owned(),
 ///     policy_type: PolicyType::Incoming(IncomingPolicy {}),
 ///     validation_callback: |_x, _y| true,
-/// }
+/// };
 /// ```
 /// 
 /// # Examples rule layer selection
 /// ```
-/// PolicyRule {
+/// use dispnet_storage::policy::{PolicyRule, PolicyType, LayerPolicy};
+/// 
+/// let rule = PolicyRule {
 ///     name: "2".to_owned(),
 ///     policy_type: PolicyType::Layer(LayerPolicy {
 ///         success_layer_key: "".to_owned(),
 ///     }),
 ///     validation_callback: |_x, _y| true,
-/// }
+/// };
 /// ```
 /// 
 /// # Examples rule triggered
 /// ```
-/// PolicyRule {
+/// use dispnet_storage::policy::{PolicyRule, PolicyType, TriggerPolicy, PolicyTrigger};
+/// 
+/// let rule = PolicyRule {
 ///     name: "3".to_owned(),
 ///     policy_type: PolicyType::Trigger(TriggerPolicy {
 ///         layer: "l1".to_owned(),
 ///         get_validation_conditions: vec![PolicyTrigger::BeforeSave],
 ///     }),
 ///     validation_callback: |_x, _y| true,
-/// }
+/// };
 /// ```
 pub struct PolicyRule {
     pub name: String,
